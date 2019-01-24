@@ -143,8 +143,6 @@ while True:
     e = x_d - x
     e_dot = (e - e_last)/dt
 
-    print(e)
-
     # input
     u = np.matmul(K_p, e) + np.matmul(K_d, e_dot)
     u += np.array([u[0] + mass * gravity, 0, 0, 0]) 
