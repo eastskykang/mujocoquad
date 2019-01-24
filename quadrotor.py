@@ -29,7 +29,7 @@ MODEL_XML = """
 			<joint name="root"   type="free" damping="0" armature="0" pos="0 0 0" />
 			
 			<!-- Motor sites to attach motor actuators --->
-            <site name="motor0" type="cylinder" pos=" 0.1  0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
+            <site name="motor0" type="cylinder" pos=" 0.1  0.0 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
             <site name="motor1" type="cylinder" pos=" 0.1 -0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
             <site name="motor2" type="cylinder" pos="-0.1 -0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
             <site name="motor3" type="cylinder" pos="-0.1  0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
@@ -61,7 +61,7 @@ viewer = MjViewer(sim)
 t = 0
 
 x_d = np.array([
-    1.0,
+    0.5,
     0.0,
     0.0,
     0.0,
@@ -72,9 +72,9 @@ gravity = 9.8
 
 # control matrix
 kpz = 1.5
-kpphi = 0.1
-kptheta = 0.1
-kppsi = 0.1
+kpphi = 0.001
+kptheta = 0.001
+kppsi = 0.001
 
 K_p = np.array([
     [kpz, 0, 0, 0],
@@ -107,7 +107,7 @@ while True:
 
     # state
     x = np.array([
-        sim.data.get_body_xipos('quadrotor')[2] + mass * gravity,
+        sim.data.get_body_xipos('quadrotor')[2],
         roll,
         pitch,
         yaw,
@@ -116,11 +116,14 @@ while True:
     # error
     e = x_d - x
 
-    # feedback
+    # input
     u = np.matmul(K_p, e)
+    u[0] = u[0] + mass * gravity
 
     # actuator input (F, B, R, L)
     F = np.matmul(C_R, u)
+
+    print(F)
 
     sim.data.ctrl[0] = F[0]     # F
     sim.data.ctrl[1] = F[2]     # R
