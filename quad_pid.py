@@ -12,10 +12,14 @@ import math
 import numpy as np
 import os
 
+# world constants
+dt = 0.001
+gravity = 9.81
+
 MODEL_XML = """
 <mujoco model="quadrotor0">
 	<compiler inertiafromgeom="true" coordinate="local"/>
-	<option	timestep="0.01" gravity="0 0 -9.81" density="1" viscosity="1e-5" />
+	<option	timestep="{timestep}" gravity="0 0 -{gravity}" density="1" viscosity="1e-5" />
 	<worldbody>
 		<geom name="floor" pos="0 0 0" size="2 2 .2" type="plane"  conaffinity="1" rgba="1 1 1 1" condim="3"/>
 		<body name="quadrotor" pos="0 0 0" >
@@ -53,22 +57,25 @@ MODEL_XML = """
         <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="1  0. 00. 0. 0. 0." site="motor3"/>
 	</actuator>
 </mujoco>
-"""
+""".format(timestep=dt, gravity=gravity)
 
 model = load_model_from_xml(MODEL_XML)
 sim = MjSim(model)
 viewer = MjViewer(sim)
-t = 0
 
+t = 0
+e = 0
+
+# constant
+mass = 0.3
+
+# desire state (z, r, p, y)
 x_d = np.array([
     0.5,
     0.0,
     0.0,
     0.0,
 ])
-
-mass = 0.3
-gravity = 9.8
 
 # control matrix
 kpz = 4.
@@ -83,12 +90,29 @@ K_p = np.array([
     [0, 0, 0, kppsi],
 ])
 
-#
-a = 0.25
-b = 0.5
-c = 0.24
+kdz = 0.01
+kdphi = 0.01
+kdtheta = 0.01
+kdpsi = 0.01
+
+K_d = np.array([
+    [kdz, 0, 0, 0],
+    [0, kdphi, 0, 0],
+    [0, 0, kdtheta, 0],
+    [0, 0, 0, kdpsi],
+])
+
+# length of arm 
+L = 0.1 * math.sqrt(2)
+
+# constant factor
+C = 0.1
 
 # rotor matrix
+a = 0.25
+b = 1 / (2*L)
+c = 1 / (4*C)
+
 C_R = np.array([
     [a, 0, -b, -c],
     [a, 0, b, -c],
@@ -96,6 +120,7 @@ C_R = np.array([
     [a, b, 0, c],
 ])
 
+# loop
 while True:
 
     # rpy
@@ -114,16 +139,16 @@ while True:
     ])
 
     # error
+    e_last = e
     e = x_d - x
+    e_dot = (e - e_last)/dt
 
     # input
-    u = np.matmul(K_p, e)
-    u[0] = u[0] + mass * gravity
+    u = np.matmul(K_p, e) + np.matmul(K_d, e_dot)
+    u += np.array([u[0] + mass * gravity, 0, 0, 0]) 
 
     # actuator input (F, B, R, L)
     F = np.matmul(C_R, u)
-
-    print(F)
 
     sim.data.ctrl[0] = F[0]     # F
     sim.data.ctrl[1] = F[2]     # R
