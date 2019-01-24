@@ -51,10 +51,10 @@ MODEL_XML = """
 		</body>
 	</worldbody>
     <actuator>
-        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="1  0. 00. 0. 0. 0." site="motor0"/>
-        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="1  0. 00. 0. 0. 0." site="motor1"/>
-        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="1  0. 00. 0. 0. 0." site="motor2"/>
-        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="1  0. 00. 0. 0. 0." site="motor3"/>
+        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="0  0. 1. 0. 0. 0." site="motor0"/>
+        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="0  0. 1. 0. 0. 0." site="motor1"/>
+        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="0  0. 1. 0. 0. 0." site="motor2"/>
+        <motor ctrllimited="true" ctrlrange="0.0 10.0" gear="0  0. 1. 0. 0. 0." site="motor3"/>
 	</actuator>
 </mujoco>
 """.format(timestep=dt, gravity=gravity)
@@ -78,7 +78,7 @@ x_d = np.array([
 ])
 
 # control matrix
-kpz = 4.
+kpz = 0.1
 kpphi = 0.01
 kptheta = 0.01
 kppsi = 0.01
