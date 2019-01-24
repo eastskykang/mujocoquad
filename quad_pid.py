@@ -78,10 +78,10 @@ x_d = np.array([
 ])
 
 # control matrix
-kpz = 0.1
-kpphi = 0.01
-kptheta = 0.01
-kppsi = 0.01
+kpz = 1.
+kpphi = 0.1
+kptheta = 0.1
+kppsi = 0.1
 
 K_p = np.array([
     [kpz, 0, 0, 0],
@@ -90,7 +90,7 @@ K_p = np.array([
     [0, 0, 0, kppsi],
 ])
 
-kdz = 0.01
+kdz = 0.5
 kdphi = 0.01
 kdtheta = 0.01
 kdpsi = 0.01
