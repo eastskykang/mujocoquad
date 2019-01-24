@@ -3,7 +3,7 @@
 ## prerequisite
 
 - conda (strongly recommended)
-- mujoco 1.5
+- [mujoco 1.5](http://www.mujoco.org/)
 - openai gym (optional)
 
 1. put mjpro150 directory into ```~/.mujoco```
@@ -16,7 +16,7 @@
     $ # check your nvidia driver version 
     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia-410 
     ```
-5. install mujoco_py by ```pip3 install -U 'mujoco-py<1.50.2,>=1.50.1'```
+6. install mujoco_py by ```pip3 install -U 'mujoco-py<1.50.2,>=1.50.1'```
 
 
 ## how to run 
