@@ -47,10 +47,10 @@ MODEL_XML = """
 		</body>
 	</worldbody>
     <actuator>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear=".0  0. 4.  0. 0. 0." site="motor0"/>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear=".0  0. 00. 0. 0. 0." site="motor1"/>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear=".0  0. 00. 0. 0. 0." site="motor2"/>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear=".0  0. 00. 0. 0. 0." site="motor3"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="1  0. 00. 0. 0. 0." site="motor0"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="1  0. 00. 0. 0. 0." site="motor1"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="1  0. 00. 0. 0. 0." site="motor2"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="1  0. 00. 0. 0. 0." site="motor3"/>
 	</actuator>
 </mujoco>
 """
@@ -61,7 +61,7 @@ viewer = MjViewer(sim)
 t = 0
 
 x_d = np.array([
-    0.5,
+    0.2,
     0.0,
     0.0,
     0.0,
@@ -72,9 +72,9 @@ gravity = 9.8
 
 # control matrix
 kpz = 1.5
-kpphi = 0.001
-kptheta = 0.001
-kppsi = 0.001
+kpphi = 0.01
+kptheta = 0.01
+kppsi = 0.01
 
 K_p = np.array([
     [kpz, 0, 0, 0],
