@@ -33,7 +33,7 @@ MODEL_XML = """
 			<joint name="root"   type="free" damping="0" armature="0" pos="0 0 0" />
 			
 			<!-- Motor sites to attach motor actuators --->
-            <site name="motor0" type="cylinder" pos=" 0.1  0.0 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
+            <site name="motor0" type="cylinder" pos=" 0.1  0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
             <site name="motor1" type="cylinder" pos=" 0.1 -0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
             <site name="motor2" type="cylinder" pos="-0.1 -0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
             <site name="motor3" type="cylinder" pos="-0.1  0.1 0.01"  size="0.01 0.0025"  quat = "1.0 0.0 0.0 0." rgba="0.3 0.8 0.3 1"/>
@@ -102,22 +102,22 @@ K_d = np.array([
     [0, 0, 0, kdpsi],
 ])
 
-# length of arm 
-L = 0.1 * math.sqrt(2)
+# moment arm (L_arm cos 45) 
+L = 0.1
 
 # constant factor
 C = 0.1
 
 # rotor matrix
 a = 0.25
-b = 1 / (2*L)
+b = 1 / (4*L)
 c = 1 / (4*C)
 
 C_R = np.array([
-    [a, 0, -b, -c],
-    [a, 0, b, -c],
-    [a, -b, 0, c],
-    [a, b, 0, c],
+    [a, b, -b, -c],
+    [a, -b, -b, c],
+    [a, -b, b, -c],
+    [a, b, b, c],
 ])
 
 # loop
@@ -143,17 +143,19 @@ while True:
     e = x_d - x
     e_dot = (e - e_last)/dt
 
+    print(e)
+
     # input
     u = np.matmul(K_p, e) + np.matmul(K_d, e_dot)
     u += np.array([u[0] + mass * gravity, 0, 0, 0]) 
 
-    # actuator input (F, B, R, L)
+    # actuator input 
     F = np.matmul(C_R, u)
 
-    sim.data.ctrl[0] = F[0]     # F
-    sim.data.ctrl[1] = F[2]     # R
-    sim.data.ctrl[2] = F[1]     # B
-    sim.data.ctrl[3] = F[3]     # L
+    sim.data.ctrl[0] = F[0]     # +,+
+    sim.data.ctrl[1] = F[1]     # +,-
+    sim.data.ctrl[2] = F[2]     # -,-
+    sim.data.ctrl[3] = F[3]     # -,+
 
     t += 1
     sim.step()
