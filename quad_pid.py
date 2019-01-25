@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
-controller model is from 
-
-Seungho Jeong and Seul Jung, Position Control of a Quad-Rotor System, 2013
+This controller is very basic model from Seungho Jeong and Seul Jung, Position Control of a Quad-Rotor System, 2013
 https://link.springer.com/chapter/10.1007/978-3-642-37374-9_94
 """
 from mujoco_py import load_model_from_xml, MjSim, MjViewer
