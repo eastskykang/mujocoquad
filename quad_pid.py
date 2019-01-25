@@ -4,11 +4,11 @@ This controller is very basic model from Seungho Jeong and Seul Jung, Position C
 https://link.springer.com/chapter/10.1007/978-3-642-37374-9_94
 """
 from mujoco_py import load_model_from_xml, MjSim, MjViewer
-import math
 import numpy as np
 import os
 
-# world constants
+
+############################################################
 dt = 0.001
 gravity = 9.81
 
@@ -55,37 +55,19 @@ MODEL_XML = """
 </mujoco>
 """.format(timestep=dt, gravity=gravity)
 
-model = load_model_from_xml(MODEL_XML)
-sim = MjSim(model)
-viewer = MjViewer(sim)
 
-t = 0
-ex = 0
-es = 0
-ex_int = 0
-
-#####################################
-# constants
-mass = model.body_mass[1]
-L = 0.1     # moment arm (L_arm cos 45)
-
-
+############################################################
 class Trajectory:
     R = 0.5     # trajectory radius
     w = 1.0     # trajectory angular speed (rad/s)
 
-#####################################
-# control matrix
-
-
 class CtrlParam:
-    #################################
-    # attitude
 
+    # attitude
     kpz = 2.
     kpphi = 0.1
     kptheta = 0.1
-    kppsi = 0.1
+    kppsi = 0.5
 
     Kx_p = np.array([
         [kpz, 0, 0, 0],
@@ -97,7 +79,7 @@ class CtrlParam:
     kdz = 0.5
     kdphi = 0.1
     kdtheta = 0.1
-    kdpsi = 0.1
+    kdpsi = 0.
 
     Kx_d = np.array([
         [kdz, 0, 0, 0],
@@ -109,7 +91,7 @@ class CtrlParam:
     kiz = 0.01
     kiphi = 0.01
     kitheta = 0.01
-    kipsi = 0.01
+    kipsi = 0.0
 
     Kx_i = np.array([
         [kiz, 0, 0, 0],
@@ -118,9 +100,7 @@ class CtrlParam:
         [0, 0, 0, kipsi],
     ])
 
-    #################################
     # position control matrix
-
     kpx = 0.6
     kpy = 0.6
 
@@ -137,104 +117,125 @@ class CtrlParam:
         [0, kdy],
     ])
 
-#####################################
-# rotor matrix
 
-C = 0.1     # constant factor
+class MotorParam:
+    C = 0.1     # constant factor
+    L = 0.1     # moment arm (L_arm cos 45)
 
-a = 0.25
-b = 1 / (4*L)
-c = 1 / (4*C)
+    a = 0.25
+    b = 1 / (4*L)
+    c = 1 / (4*C)
 
-C_R = np.array([
-    [a, b, -b, -c],
-    [a, -b, -b, c],
-    [a, -b, b, -c],
-    [a, b, b, c],
-])
-
-#####################################
-# loop
-while True:
-
-    #################################
-    # desired position state (x, y, z)
-    # circle trajectory on 1 m height
-    s_d = np.array([
-        Trajectory.R * np.cos(Trajectory.w * dt * t),
-        Trajectory.R * np.sin(Trajectory.w * dt * t),
-        1.0
+    C_R = np.array([
+        [a, b, -b, -c],
+        [a, -b, -b, c],
+        [a, -b, b, -c],
+        [a, b, b, c],
     ])
 
-    ################################
-    # rpy
-    rotmat_WB = sim.data.get_body_xmat('quadrotor')
 
-    yaw = np.arctan2(rotmat_WB[1][0], rotmat_WB[0][0])
-    pitch = np.arctan2(-rotmat_WB[2][0], np.sqrt(rotmat_WB[2][1] ** 2 + rotmat_WB[2][2] ** 2))
-    roll = np.arctan2(rotmat_WB[2][1], rotmat_WB[2][2])
+############################################################
+def main():
 
-    ################################
-    # state
+    # load model
+    model = load_model_from_xml(MODEL_XML)
+    sim = MjSim(model)
+    viewer = MjViewer(sim)
 
-    # position
-    s = np.array([
-        sim.data.get_body_xipos('quadrotor')[0],
-        sim.data.get_body_xipos('quadrotor')[1],
-    ])
+    # variables
+    t = 0
+    ex = 0
+    es = 0
+    ex_int = 0
 
-    # attitude
-    x = np.array([
-        sim.data.get_body_xipos('quadrotor')[2],
-        roll,
-        pitch,
-        yaw,
-    ])
+    # constants
+    mass = model.body_mass[1]
 
-    ################################
-    # error
+    # loop
+    while True:
 
-    # position
-    es_last = es
-    es = s_d[0:2] - s
-    es_dot = (es - es_last) / dt            # differentiation
+        #################################
+        # desired position state (x, y, z)
+        # circle trajectory on 1 m height
+        s_d = np.array([
+            Trajectory.R * np.cos(Trajectory.w * dt * t),
+            Trajectory.R * np.sin(Trajectory.w * dt * t),
+            1.0
+        ])
 
-    rotmat_BW = np.linalg.inv(rotmat_WB)
+        ################################
+        # rpy
+        rotmat_WB = sim.data.get_body_xmat('quadrotor')
 
-    # position input
-    us = np.matmul(CtrlParam.Ks_p, es) \
-         + np.matmul(CtrlParam.Ks_d, es_dot)
-    us = np.append(us, 0)
+        yaw = np.arctan2(rotmat_WB[1][0], rotmat_WB[0][0])
+        pitch = np.arctan2(-rotmat_WB[2][0], np.sqrt(rotmat_WB[2][1] ** 2 + rotmat_WB[2][2] ** 2))
+        roll = np.arctan2(rotmat_WB[2][1], rotmat_WB[2][2])
 
-    # attitude
-    x_d = np.array([
-        s_d[2],                             # +z
-        -np.matmul(rotmat_BW, us)[1],       # -y -> roll,
-        np.matmul(rotmat_BW, us)[0],        # +x -> pitch,
-        0.0,
-    ])
+        ################################
+        # state
 
-    ex_last = ex
-    ex = x_d - x
-    ex_dot = (ex - ex_last) / dt            # differentiation
-    ex_int += ex * dt                       # integration
+        # position
+        s = np.array([
+            sim.data.get_body_xipos('quadrotor')[0],
+            sim.data.get_body_xipos('quadrotor')[1],
+        ])
 
-    # attitude input
-    u = np.matmul(CtrlParam.Kx_p, ex) \
-        + np.matmul(CtrlParam.Kx_d, ex_dot) \
-        + np.matmul(CtrlParam.Kx_i, ex_int)
-    u[0] += mass * gravity / (np.cos(pitch) * np.cos(roll))
+        # attitude
+        x = np.array([
+            sim.data.get_body_xipos('quadrotor')[2],
+            roll,
+            pitch,
+            yaw,
+        ])
 
-    # actuator input
-    F = np.matmul(C_R, u)
+        ################################
+        # error
 
-    sim.data.ctrl[0] = F[0]     # +,+
-    sim.data.ctrl[1] = F[1]     # +,-
-    sim.data.ctrl[2] = F[2]     # -,-
-    sim.data.ctrl[3] = F[3]     # -,+
+        # position
+        es_last = es
+        es = s_d[0:2] - s
+        es_dot = (es - es_last) / dt            # differentiation
 
-    t += 1
-    sim.step()
-    viewer.render()
-    if t > 100 and os.getenv('TESTING') is not None:
-        break
+        rotmat_BW = np.linalg.inv(rotmat_WB)
+
+        # position input
+        us = np.matmul(CtrlParam.Ks_p, es) \
+             + np.matmul(CtrlParam.Ks_d, es_dot)
+        us = np.append(us, 0)
+
+        # attitude
+        x_d = np.array([
+            s_d[2],                             # +z
+            -np.matmul(rotmat_BW, us)[1],       # -y -> roll,
+            np.matmul(rotmat_BW, us)[0],        # +x -> pitch,
+            0,
+        ])
+
+        ex_last = ex
+        ex = x_d - x
+        ex_dot = (ex - ex_last) / dt            # differentiation
+        ex_int += ex * dt                       # integration
+
+        # attitude input
+        u = np.matmul(CtrlParam.Kx_p, ex) \
+            + np.matmul(CtrlParam.Kx_d, ex_dot) \
+            + np.matmul(CtrlParam.Kx_i, ex_int)
+        u[0] += mass * gravity / (np.cos(pitch) * np.cos(roll))
+
+        # actuator input
+        F = np.matmul(MotorParam.C_R, u)
+
+        sim.data.ctrl[0] = F[0]     # +,+
+        sim.data.ctrl[1] = F[1]     # +,-
+        sim.data.ctrl[2] = F[2]     # -,-
+        sim.data.ctrl[3] = F[3]     # -,+
+
+        t += 1
+        sim.step()
+        viewer.render()
+        if t > 100 and os.getenv('TESTING') is not None:
+            break
+
+
+if __name__ == "__main__":
+    main()
