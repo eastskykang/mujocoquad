@@ -47,10 +47,10 @@ MODEL_XML = """
 		</body>
 	</worldbody>
     <actuator>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0. 0." site="motor0"/>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0. 0." site="motor1"/>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0. 0." site="motor2"/>
-        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0. 0." site="motor3"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0. -0.1" site="motor0"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0.  0.1" site="motor1"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0. -0.1" site="motor2"/>
+        <motor ctrllimited="true" ctrlrange="0.0 1.0" gear="0  0. 1. 0. 0.  0.1" site="motor3"/>
 	</actuator>
 </mujoco>
 """.format(timestep=dt, gravity=gravity)
@@ -67,7 +67,7 @@ class CtrlParam:
     kpz = 2.
     kpphi = 0.1
     kptheta = 0.1
-    kppsi = 0.5
+    kppsi = 0.3
 
     Kx_p = np.array([
         [kpz, 0, 0, 0],
@@ -79,7 +79,7 @@ class CtrlParam:
     kdz = 0.5
     kdphi = 0.1
     kdtheta = 0.1
-    kdpsi = 0.
+    kdpsi = 0.1
 
     Kx_d = np.array([
         [kdz, 0, 0, 0],
@@ -91,7 +91,7 @@ class CtrlParam:
     kiz = 0.01
     kiphi = 0.01
     kitheta = 0.01
-    kipsi = 0.0
+    kipsi = 0.01
 
     Kx_i = np.array([
         [kiz, 0, 0, 0],
@@ -208,7 +208,7 @@ def main():
             s_d[2],                             # +z
             -np.matmul(rotmat_BW, us)[1],       # -y -> roll,
             np.matmul(rotmat_BW, us)[0],        # +x -> pitch,
-            0,
+            np.pi/2,
         ])
 
         ex_last = ex
