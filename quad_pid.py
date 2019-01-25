@@ -208,7 +208,7 @@ def main():
             s_d[2],                             # +z
             -np.matmul(rotmat_BW, us)[1],       # -y -> roll,
             np.matmul(rotmat_BW, us)[0],        # +x -> pitch,
-            np.pi/2,
+            (Trajectory.w * dt * t + np.pi) % (2 * np.pi) - np.pi,
         ])
 
         ex_last = ex
