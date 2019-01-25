@@ -63,10 +63,14 @@ viewer = MjViewer(sim)
 
 t = 0
 e = 0
+e_int = 0
 
-# constant
-mass = 0.3
+#####################################
+# constants
+mass = model.body_mass[1]
+L = 0.1 # moment arm (L_arm cos 45)
 
+#####################################
 # desire state (z, r, p, y)
 x_d = np.array([
     1.,
@@ -75,6 +79,7 @@ x_d = np.array([
     0.0,
 ])
 
+#####################################
 # control matrix
 kpz = 2.
 kpphi = 0.1
@@ -100,13 +105,23 @@ K_d = np.array([
     [0, 0, 0, kdpsi],
 ])
 
-# moment arm (L_arm cos 45) 
-L = 0.1
+kiz = 0.01
+kiphi = 0.01
+kitheta = 0.01
+kipsi = 0.01
 
-# constant factor
-C = 0.1
+K_i = np.array([
+    [kiz, 0, 0, 0],
+    [0, kiphi, 0, 0],
+    [0, 0, kitheta, 0],
+    [0, 0, 0, kipsi],
+])
 
+#####################################
 # rotor matrix
+
+C = 0.1     # constant factor
+
 a = 0.25
 b = 1 / (4*L)
 c = 1 / (4*C)
@@ -118,6 +133,7 @@ C_R = np.array([
     [a, b, b, c],
 ])
 
+#####################################
 # loop
 while True:
 
@@ -139,10 +155,11 @@ while True:
     # error
     e_last = e
     e = x_d - x
-    e_dot = (e - e_last)/dt
+    e_dot = (e - e_last)/dt     # differentiation
+    e_int += e * dt             # integration
 
     # input
-    u = np.matmul(K_p, e) + np.matmul(K_d, e_dot)
+    u = np.matmul(K_p, e) + np.matmul(K_d, e_dot) + np.matmul(K_i, e_int)
     u += np.array([u[0] + mass * gravity, 0, 0, 0]) 
 
     # actuator input 
