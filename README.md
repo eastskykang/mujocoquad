@@ -1,4 +1,4 @@
-# mujocoquad
+# mujocoquad_gym
 
 ## prerequisite
 
@@ -19,6 +19,7 @@
     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia-410 
     ```
 7. install gym by ```pip3 install 'gym[all]'```
+8. install mujocoquad_gym by ```pip3 install -e .```
 
 ## how to run 
 

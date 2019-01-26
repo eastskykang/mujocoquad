@@ -3,10 +3,11 @@ import numpy as np
 
 from mujocoquad_gym.envs.mujocoquad_force import MujocoQuadForceEnv
 
-############################################################
+
 class Trajectory:
     R = 0.5     # trajectory radius
     w = 1.0     # trajectory angular speed (rad/s)
+
 
 class CtrlParam:
 
@@ -80,102 +81,107 @@ class MotorParam:
         [a, b, b, c],
     ])
 
-dt = 0.01
-mass = 0.3
-gravity = 9.81
 
-ex = 0
-es = 0
-ex_int = 0
+def main():
+    dt = 0.01
+    mass = 0.3
+    gravity = 9.81
 
-env = gym.make('MujocoQuadForce-v0')
+    ex = 0
+    es = 0
+    ex_int = 0
 
-# [x, y, z, q0, q1, q2, q3]
-observation = env.reset()
-for t in range(1000):
+    env = gym.make('MujocoQuadForce-v0')
 
-    env.render()
-    #################################
-    # desired position state (x, y, z)
-    # circle trajectory on 1 m height
-    s_d = np.array([
-        Trajectory.R * np.cos(Trajectory.w * dt * t),
-        Trajectory.R * np.sin(Trajectory.w * dt * t),
-        1.0
-    ])
+    # [x, y, z, q0, q1, q2, q3]
+    observation = env.reset()
+    for t in range(1000):
 
-    ################################
-    # quat -> rpy
-    quat = observation[3:]
-    rotmat_WB = np.array([
-        [1 - 2*(quat[2]**2 + quat[3]**2), 2*(quat[1]*quat[2] - quat[3]*quat[0]), 2*(quat[1]*quat[3] + quat[2]*quat[0])],
-        [2 * (quat[1]*quat[2] + quat[3]*quat[0]), 1 - 2*(quat[1]**2 + quat[3]**2), 2*(quat[2]*quat[3] - quat[1]*quat[0])],
-        [2 * (quat[1]*quat[3] - quat[2]*quat[0]), 2*(quat[2]*quat[3] + quat[1]*quat[0]), 1 - 2*(quat[1]**2 + quat[2]**2)],
-    ])
+        env.render()
+        #################################
+        # desired position state (x, y, z)
+        # circle trajectory on 1 m height
+        s_d = np.array([
+            Trajectory.R * np.cos(Trajectory.w * dt * t),
+            Trajectory.R * np.sin(Trajectory.w * dt * t),
+            1.0
+        ])
 
-    roll = np.arctan2(2*(quat[0] * quat[1] + quat[2] * quat[3]), 1 - 2*(quat[1]**2 + quat[2]**2))
-    pitch = np.arcsin(2*(quat[0] * quat[2] - quat[3] * quat[1]))
-    yaw = np.arctan2(2*(quat[0] * quat[3] + quat[1] * quat[2]), 1 - 2*(quat[2]**2 + quat[3]**2))
+        ################################
+        # quat -> rpy
+        quat = observation[3:]
+        rotmat_WB = np.array([
+            [1 - 2*(quat[2]**2 + quat[3]**2), 2*(quat[1]*quat[2] - quat[3]*quat[0]), 2*(quat[1]*quat[3] + quat[2]*quat[0])],
+            [2 * (quat[1]*quat[2] + quat[3]*quat[0]), 1 - 2*(quat[1]**2 + quat[3]**2), 2*(quat[2]*quat[3] - quat[1]*quat[0])],
+            [2 * (quat[1]*quat[3] - quat[2]*quat[0]), 2*(quat[2]*quat[3] + quat[1]*quat[0]), 1 - 2*(quat[1]**2 + quat[2]**2)],
+        ])
 
-    ################################
-    # state
+        roll = np.arctan2(2*(quat[0] * quat[1] + quat[2] * quat[3]), 1 - 2*(quat[1]**2 + quat[2]**2))
+        pitch = np.arcsin(2*(quat[0] * quat[2] - quat[3] * quat[1]))
+        yaw = np.arctan2(2*(quat[0] * quat[3] + quat[1] * quat[2]), 1 - 2*(quat[2]**2 + quat[3]**2))
 
-    # position
-    s = np.array([
-        observation[0],
-        observation[1],
-    ])
+        ################################
+        # state
 
-    # attitude
-    x = np.array([
-        observation[2],
-        roll,
-        pitch,
-        yaw,
-    ])
+        # position
+        s = np.array([
+            observation[0],
+            observation[1],
+        ])
 
-    ################################
-    # error
+        # attitude
+        x = np.array([
+            observation[2],
+            roll,
+            pitch,
+            yaw,
+        ])
 
-    # position
-    es_last = es
-    es = s_d[0:2] - s
-    es_dot = (es - es_last) / dt  # differentiation
+        ################################
+        # error
 
-    # position input
-    us = np.matmul(CtrlParam.Ks_p, es) \
-         + np.matmul(CtrlParam.Ks_d, es_dot)
-    us = np.append(us, 0)
+        # position
+        es_last = es
+        es = s_d[0:2] - s
+        es_dot = (es - es_last) / dt  # differentiation
 
-    # attitude
-    rotmat_BW = np.linalg.inv(rotmat_WB)
+        # position input
+        us = np.matmul(CtrlParam.Ks_p, es) \
+             + np.matmul(CtrlParam.Ks_d, es_dot)
+        us = np.append(us, 0)
 
-    x_d = np.array([
-        s_d[2],  # +z
-        -np.matmul(rotmat_BW, us)[1],  # -y -> roll,
-        np.matmul(rotmat_BW, us)[0],  # +x -> pitch,
-        (Trajectory.w * dt * t + np.pi) % (2 * np.pi) - np.pi,
-    ])
+        # attitude
+        rotmat_BW = np.linalg.inv(rotmat_WB)
 
-    ex_last = ex
-    ex = x_d - x
-    ex_dot = (ex - ex_last) / dt  # differentiation
-    ex_int += ex * dt  # integration
+        x_d = np.array([
+            s_d[2],  # +z
+            -np.matmul(rotmat_BW, us)[1],  # -y -> roll,
+            np.matmul(rotmat_BW, us)[0],  # +x -> pitch,
+            (Trajectory.w * dt * t + np.pi) % (2 * np.pi) - np.pi,
+        ])
 
-    # attitude input
-    u = np.matmul(CtrlParam.Kx_p, ex) \
-        + np.matmul(CtrlParam.Kx_d, ex_dot) \
-        + np.matmul(CtrlParam.Kx_i, ex_int)
-    u[0] += mass * gravity / (np.cos(pitch) * np.cos(roll))
+        ex_last = ex
+        ex = x_d - x
+        ex_dot = (ex - ex_last) / dt  # differentiation
+        ex_int += ex * dt  # integration
 
-    # actuator input
-    # +,+
-    # +,-
-    # -,-
-    # -,+
-    F = np.matmul(MotorParam.C_R, u)
+        # attitude input
+        u = np.matmul(CtrlParam.Kx_p, ex) \
+            + np.matmul(CtrlParam.Kx_d, ex_dot) \
+            + np.matmul(CtrlParam.Kx_i, ex_int)
+        u[0] += mass * gravity / (np.cos(pitch) * np.cos(roll))
 
-    observation, reward, done, info = env.step(F)
+        # actuator input
+        # +,+
+        # +,-
+        # -,-
+        # -,+
+        F = np.matmul(MotorParam.C_R, u)
 
-    if done:
-        break
+        observation, reward, done, info = env.step(F)
+
+        if done:
+            break
+
+if __name__ == "__main__":
+    main()
