@@ -196,14 +196,14 @@ def main():
         es = s_d[0:2] - s
         es_dot = (es - es_last) / dt            # differentiation
 
-        rotmat_BW = np.linalg.inv(rotmat_WB)
-
         # position input
         us = np.matmul(CtrlParam.Ks_p, es) \
              + np.matmul(CtrlParam.Ks_d, es_dot)
         us = np.append(us, 0)
 
         # attitude
+        rotmat_BW = np.linalg.inv(rotmat_WB)
+
         x_d = np.array([
             s_d[2],                             # +z
             -np.matmul(rotmat_BW, us)[1],       # -y -> roll,
