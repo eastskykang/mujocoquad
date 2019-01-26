@@ -3,25 +3,26 @@
 ## prerequisite
 
 - conda (strongly recommended)
+- [gym](https://gym.openai.com/) with every environment 
 - [mujoco 1.5](http://www.mujoco.org/)
-- openai gym (optional)
 
 1. put mjpro150 directory into ```~/.mujoco```
 2. put mjkey.txt into ```~/.mujoco```
-3. conda create -n mujocoquad python=3.6
-4. conda activate mujocoquad 
-5. export LD_LIBRARY_PATH
+3. install apt dependencies
+    - see [gym README.md](https://github.com/openai/gym#installing-everything)
+4. conda create -n mujocoquad python=3.6
+5. conda activate mujocoquad 
+6. export LD_LIBRARY_PATH
     ```sh
     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/donghok/.mujoco/mjpro150/bin
     $ # check your nvidia driver version 
     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia-410 
     ```
-6. install mujoco_py by ```pip3 install -U 'mujoco-py<1.50.2,>=1.50.1'```
-
+7. install gym by ```pip3 install 'gym[all]'```
 
 ## how to run 
 
-1. conda activate mujocoquad
+1. ```conda activate mujocoquad```
 2. from the project root directory, 
     ```sh
     $ python quad_pid.py
