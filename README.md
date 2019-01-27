@@ -14,7 +14,7 @@
 5. conda activate mujocoquad 
 6. export LD_LIBRARY_PATH
     ```sh
-    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/donghok/.mujoco/mjpro150/bin
+    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/.mujoco/mjpro150/bin
     $ # check your nvidia driver version 
     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia-410 
     ```
