@@ -6,12 +6,12 @@ import numpy as np
 from baselines.common.tf_util import get_session
 from baselines.common.vec_env.vec_video_recorder import VecVideoRecorder
 from baselines.common.vec_env.vec_frame_stack import VecFrameStack
+from baselines.common.cmd_util import make_vec_env, make_env
 from baselines import logger
 from importlib import import_module
 from autolab_core import YamlConfig
 
-from anymal_gym.envs import AnymalEnv
-from anymal_gym.wrappers import RandomActionWrapper
+from mujocoquad_gym.envs import MujocoQuadForceEnv
 
 try:
     from mpi4py import MPI
@@ -28,8 +28,10 @@ def parse_args():
     parser.add_argument('--num_timesteps', type=int, required=False, default=2e7, help='the number of timestep')
     parser.add_argument('--seed', type=int, required=False, help='random seed')
     parser.add_argument('--network', type=str, required=False, default='mlp', help='network type')
-    parser.add_argument('--alg', type=str, required=False, default='trpo_mpi', help='algorithm type')
+    parser.add_argument('--alg', type=str, required=False, default='ppo2', help='algorithm type')
     parser.add_argument('--save_video_interval', type=int, required=False, default=0, help='video interval')
+    parser.add_argument('--num_env', type=int, required=False, default=1, help='number of environment')
+    parser.add_argument('--reward_scale', type=float, required=False, default=1., help='reward scale')
 
     return parser.parse_args()
 
@@ -97,8 +99,11 @@ def build_env(args):
     alg = args.alg
     seed = args.seed
 
-    # cfg
-    env = RandomActionWrapper(AnymalEnv())
+    # load mujocoquad_gym env
+    # try:
+    #     env = MujocoQuadForceEnv
+    # except ImportError:
+    #     raise ImportError('cannot find MujocoQuadForceEnv')
 
     # tf config
     config = tf.ConfigProto(allow_soft_placement=True,
@@ -109,7 +114,7 @@ def build_env(args):
 
     flatten_dict_observations = alg not in {'her'}
 
-    # env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale, flatten_dict_observations=flatten_dict_observations)
+    env = make_vec_env('MujocoQuadForce-v0', 'mujoco', args.num_env or 1, seed, reward_scale=args.reward_scale, flatten_dict_observations=flatten_dict_observations)
 
     # if env_type == 'mujoco':
     #     env = VecNormalize(env)
